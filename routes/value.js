@@ -6,16 +6,18 @@ const router = express.Router();
 const valueController = require('../controllers/value');
 const upload = require('../modules/multer');
 
-//value 서비스 목록 조회
-router.get('/category/:order', valueController.getValueList);
-//value 서비스 상세 조회
-router.get('/:idx', valueController.getValue);
-//value 서비스 생성(with photo)
+//value_리스트
+router.get('/', valueController.getValueList);
+//value_상세
+router.get('/detail/:vidx', valueController.getValue);
+//value_생성(with photo)
 router.post('/', upload.array('photos', 10), valueController.createValue);
-//value 서비스 수정
-router.put('/:idx', valueController.updateValue);
-//value 서비스 삭제
-router.delete('/:idx', valueController.deleteValue);
+//value_수정
+router.put('/:vidx', valueController.updateValue);
+//value_삭제
+router.delete('/:vidx', valueController.deleteValue);
+//value_검색
+//router.get('/search', valueController.getValueSearch)
 
 router.get('/my/category/:order', valueController.getValueList);
 

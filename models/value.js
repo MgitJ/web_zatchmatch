@@ -20,18 +20,30 @@ const Value = {
         }
     },
 
-    getValueList: async (order) => {
+    getValueList: async (order, address, product, pop) => {
+
+      var table;
+    //  var timer;
+    //  if(pop == 1) timer = "AND timer IS NOT NULL";
+     //console.log(order + address + product +pop);
         if(order == "recent"){
+          //address , pop
+            table = `plcdb.value_product as v INNER JOIN user2 as u ON v.userIdx = u.userIdx
+                     JOIN category as c ON c.categoryIdx = v.categoryIdx
+                     JOIN value_photo as p ON v.productIdx = p.productIdx
+                     WHERE v.categoryIdx = ${product}
+                     GROUP BY v.productIdx
+                     ORDER BY v.createdAt desc;`
+        }else if(order == "popular"){
 
-        }else if(order == "recent"){
+        }else if(order == "remain"){
 
-        }else if(order == "recent"){
-
-        }else if(order == "recent"){
+        }else if(order == ""){
 
         }
 
-        const query = `SELECT * FROM ${table}`;
+      var query = `SELECT * FROM ${table}`;
+
         try {
             const result = await pool.queryParam(query);
             return result;
@@ -67,7 +79,8 @@ const Value = {
            const result = await pool.queryParamArr(query, values);
            return result;
         } catch (err) {
-            if (err.errno == 1062) {
+          //  return -1;
+           if (err.errno == 1062) {
                 console.log('createStudy ERROR : ', err.errno, err.code);
                 return -1;
             }
@@ -78,15 +91,16 @@ const Value = {
 
     uploadValuePhoto: async (userIdx, files, certified) => {
       //productphoto table\
-     console.log(files.length);
+    // console.log(files.length);
+       if(files.length == 0) return -1;
         const fields2 = 'productIdx, photo, certified';
         const questions2 = '?,?';
         const values2 = [userIdx];
         var query2 = `SET @productIdx = (SELECT productIdx FROM value_product WHERE userIdx = ? ORDER BY productIdx DESC LIMIT 1);
-                      INSERT INTO value_photo(${fields2}) VALUES`;
+                       INSERT INTO value_photo(${fields2}) VALUES`;
         for(var i = 0; i<files.length; i++){
           values2.push("https://zatch-example.s3.ap-northeast-2.amazonaws.com/" + files[i].key, certified[i]);
-          query2 += `(@productIdx, ${questions2})`;
+          query2 += ` (@productIdx, ${questions2})`;
           if(i != files.length-1) query2 += `,`;
         }
         // connection query
@@ -94,6 +108,7 @@ const Value = {
           const result2 = await pool.queryParamArr(query2, values2);
           return result2;
       } catch (err) {
+        //return -1;
           if (err.errno == 1062) {
               console.log('createStudy ERROR : ', err.errno, err.code);
               return -1;
@@ -150,7 +165,7 @@ app.put('/profile_edit/:id', upload.single('image'), async(req, res) => {
     // },
 
     checkValueIdx: async (idx) => {
-        const query = `SELECT * FROM ${table} WHERE UserIdx = ${idx}`;
+        const query = `SELECT * FROM user2 WHERE userIdx = ${idx}`;
         try {
             const result = await pool.queryParam(query);
             if (result.length >= 1) {
@@ -170,11 +185,9 @@ app.put('/profile_edit/:id', upload.single('image'), async(req, res) => {
 
     updateValue: async (updateService) => {
       const query = `UPDATE ${table}
-      SET categoryIdx = "${updateStudy.categoryIdx}", purchaseCheck = "${updateStudy.purchaseCheck}"
-     ,productName = "${updateStudy.productName}", price = "${updateStudy.price}"
-     ,number = "${updateStudy.number}",addInfo = "${updateStudy.addInfo}"
-     ,deadlineCheck = "${updateStudy.deadlineCheck}"
-     WHERE productIdx = "${updateStudy.studyIdx}" `;
+      SET categoryIdx = "${updateService.categoryIdx}", purchaseCheck = "${updateService.purchaseCheck}" ,productName = "${updateService.productName}", price = "${updateService.price}"
+      ,number = "${updateService.number}",addInfo = "${updateService.addInfo}" ,deadlineCheck = "${updateService.deadlineCheck}" WHERE productIdx = "${updateService.productIdx}"`;
+
         try {
             const result = await pool.queryParam(query);
             if (result.affectedRows > 0) return result;
